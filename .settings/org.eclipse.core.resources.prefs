@@ -1,0 +1,8 @@
+eclipse.preferences.version=1
+encoding//src/main/java/com/shang/controller/UserController.java=UTF-8
+encoding//src/main/java/com/shang/dao/UserDao.java=UTF-8
+encoding//src/main/java/com/shang/domain/User.java=UTF-8
+encoding//src/main/java/com/shang/service/UserService.java=UTF-8
+encoding//src/main/java/com/shang/service/UserServiceImpl.java=UTF-8
+encoding//src/test/java/com/shang/baseTest/SpringTestCase.java=UTF-8
+encoding//src/test/java/com/shang/service/UserServiceTest.java=UTF-8

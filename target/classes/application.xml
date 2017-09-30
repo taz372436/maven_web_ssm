@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="  
+           http://www.springframework.org/schema/beans  
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+           http://www.springframework.org/schema/aop  
+           http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		   http://www.springframework.org/schema/task 
+		   http://www.springframework.org/schema/task/spring-task-3.0.xsd
+           http://www.springframework.org/schema/context  
+           http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+     
+     <!-- 引入jdbc配置文件 -->  
+     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+               <value>classpath:properties/*.properties</value>
+                <!--要是有多个配置文件，只需在这里继续添加即可 -->
+            </list>
+        </property>
+    </bean>
+    
+    
+
+	<!-- 配置数据源 -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<!-- 不使用properties来配置 -->
+		<!-- <property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
+			<property name="url" value="jdbc:mysql://localhost:3306/learning" /> 
+			<property name="username" value="root" /> 
+			<property name="password" value="christmas258@" /> -->
+	   <!-- 使用properties来配置 -->
+		<property name="driverClassName">
+			<value>${jdbc_driverClassName}</value>
+		</property>
+		<property name="url">
+			<value>${jdbc_url}</value>
+		</property>
+		<property name="username">
+			<value>${jdbc_username}</value>
+		</property>
+		<property name="password">
+			<value>${jdbc_password}</value>
+		</property>
+	</bean>
+
+	<!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage"
+			value="com.shang.dao" />
+	</bean>
+
+    <!-- 配置Mybatis的文件 ，mapperLocations配置**Mapper.xml文件位置，configLocation配置mybatis-config文件位置-->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+        <property name="mapperLocations" value="classpath*:com/shang/mapper/**/*.xml"/>  
+		<property name="configLocation" value="classpath:mybatis/mybatis-config.xml" />
+		<!-- <property name="typeAliasesPackage" value="com.tiantian.ckeditor.model" 
+			/> -->
+	</bean>
+	
+	<!-- 自动扫描注解的bean -->
+	<context:component-scan base-package="com.shang.service" />
+	
+<!-- 	任务扫描注解 -->
+	<task:executor id="executor" pool-size="5" />  
+	<task:scheduler id="scheduler" pool-size="10" />  
+	<task:annotation-driven executor="executor" scheduler="scheduler" />
+	
+	<!-- For times when you just need to invoke a method on a specific object -->  
+    <bean id="simpleJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">  
+        <property name="targetObject" ref="myBean" />  
+        <property name="targetMethod" value="printMessage" />  
+    </bean>  
+   
+   
+    <!-- For times when you need more complex processing, passing data to the scheduled job -->  
+    <bean name="firstComplexJobDetail"    class="org.springframework.scheduling.quartz.JobDetailFactoryBean">  
+        <property name="jobClass" value="com.shang.service.jobs.FirstScheduledJob" />  
+        <property name="jobDataMap">  
+            <map>  
+                <entry key="anotherBean" value-ref="anotherBean" />  
+            </map>  
+        </property>  
+        <property name="durability" value="true" />  
+    </bean>  
+      
+    <!-- Always run at 20:00 everyday -->  
+    <bean name="secondComplexJobDetail"    class="org.springframework.scheduling.quartz.JobDetailFactoryBean">  
+        <property name="jobClass" value="com.shang.service.jobs.SecondScheduledJob" />  
+        <property name="durability" value="true" />  
+    </bean>  
+   
+   
+    <!-- Run the job every 2 seconds with initial delay of 1 second -->  
+    <bean id="simpleTrigger"  class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">  
+        <property name="jobDetail" ref="simpleJobDetail" />  
+        <property name="startDelay" value="1000" />  
+        <property name="repeatInterval" value="2000" />  
+    </bean>  
+   
+   
+    <!-- Run the job every 5 seconds -->  
+    <bean id="cronTrigger"  class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail" ref="firstComplexJobDetail" />  
+        <!--<property name="cronExpression" value="0/5 * * ? * SAT-SUN" />-->  
+        <property name="cronExpression" value="0/5 * * ? * *" />  
+          
+    </bean>  
+      
+    <!-- Always run at 20:00 everyday -->  
+    <bean id="secondCronTrigger"  class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+        <property name="jobDetail" ref="secondComplexJobDetail" />  
+        <property name="cronExpression" value="0 0 20 ? * *" />  
+    </bean>  
+   
+   
+    <!-- Scheduler factory bean to glue together jobDetails and triggers to Configure Quartz Scheduler -->  
+    <bean  class="org.springframework.scheduling.quartz.SchedulerFactoryBean">  
+        <property name="jobDetails">  
+            <list>  
+                <ref bean="simpleJobDetail" />  
+                <ref bean="firstComplexJobDetail" />  
+                <ref bean="secondComplexJobDetail" />  
+            </list>  
+        </property>  
+   
+        <property name="triggers">  
+            <list>  
+                <ref bean="simpleTrigger" />  
+                <ref bean="cronTrigger" />  
+                <ref bean="secondCronTrigger" />  
+            </list>  
+        </property>  
+    </bean>  
+	
+	
+	
+	
+</beans>
